@@ -1,7 +1,7 @@
 var express= require('express');
 var bodyParser=require('body-parser');
 var request=require('request');
-
+//change
 const APP_TOKEN='EAAEO5UiOUXABADYI1EZAjOyjbI4o7LAwaWmMgFozKiLtIh2FQUH849m74AFGNlzSsKZCKasfRZBxJhoCjgGfKn2LTTTRzQPPVBwZBUFZAwb1MlOnK3CGcVQ243p7FTJBZC5IBLBkzxOYqZBxHQlKoburUvhvQnz6nUQodaeh38KtkuZCsMdua6SX';
 
 var app=express();
@@ -65,7 +65,6 @@ function sendMessageText(recipientId,message){
         recipient:{
             id:recipientId
         },
-        message:{
             text:message
         }
     };
