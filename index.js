@@ -52,8 +52,8 @@ app.post('/webhook',function(req,res){
 function reciveMessage(event){
     var senderID=event.sender.id;
     var messageText=event.message.text;
-    console.log('recive mensaje'+senderID);
-    console.log('recive mensaje'+messageText);
+    console.log('Sender: '+senderID);
+    console.log('Message: '+messageText);
     evaluateMessage(senderID,messageText);
 }
 function evaluateMessage(recipientId,message) {
@@ -88,9 +88,9 @@ function callSendApi(messageData){
         json:messageData
     },function(error,response,data){
         if(error){
-            console.log('Error enviando msg'+JSON.stringify(response));
+           // console.log('Error enviando msg'+JSON.stringify(response));
         }else{
-            console.log('Mensaje exitoso'+ JSON.stringify(response));
+            //console.log('Mensaje exitoso'+ JSON.stringify(response));
         }
     });
 }
@@ -116,4 +116,15 @@ function getOrderInformation(sql){
 }
 function ProductsById(id){
     return 'Select * from products where id='+id;
+}
+
+
+
+
+
+//Strings functions :D
+function getSubstringFromString(message,separetor){
+    for (var i = 0; i < message.length; i++)
+        if(message.charAt(i)==separetor)
+           return message.substring(i+1);
 }
