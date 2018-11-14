@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 
 app.listen(3000,function() {
     console.log("Servidor  en 3000");
-    getOrderInformation(ProductsById(1));
+    //getOrderInformation(ProductsById(1));
 });
 
 app.get('/',function(req,res){
@@ -58,15 +58,16 @@ function reciveMessage(event){
 }
 function evaluateMessage(recipientId,message) {
     var finalMessage='';
-    if(isContain(message,'ayuda'))
+    if(isContain(message,'ayuda')){
          finalMessage='¿En qué puedo ayudarte?\nPor ejemplo puedes:\n1. Consultarme detalles de tus compras: Detalle #numero_de_pedido\n2. Ver el estatus de alguno de tus productos: Producto #numero_producto #token\n 3. Productos nuevos: Novedades';
     //if(isContain(message,'Producto')
-
-
-
-
-    sendMessageText(recipientId,finalMessage);
+    sendMessageText(recipientId,finalMessage);}
+    else{
+        sendMessageText2(recipientId,finalMessage);
+    }
 }
+
+
 function sendMessageText(recipientId,message){
     var messageData={
         recipient:{
@@ -95,8 +96,49 @@ function callSendApi(messageData){
     });
 }
 
+
+
+//Templates
+function sendMessageText2(recipientId,message){
+    var messageData={
+        recipient:{
+            id:recipientId
+        },
+        message:{
+            attachment:{
+                type: "template",
+                payload: {
+                    template_type: "generic",
+                    elements: [elementTemplate()]
+                }
+            }
+        }
+        };
+    
+    callSendApi(messageData);
+}
+function elementTemplate(){
+    return{
+        title: "TEst template",
+        subtitle: "hekklo world js",
+        item_url: "https://www.pixabay.com",
+        image_url: "https://cdn.pixabay.com/photo/2018/10/01/12/18/leaf-3716035_960_720.jpg",
+        buttons: [buttonsTemplate()],
+    }
+}
+function buttonsTemplate(){
+    return{
+        type: "web_url",
+        url:"https://www.google.com",
+        title: "Ver"
+    }
+}
+
+//
+
 function isContain(sentence,wordToFind){
-    return ""+sentence.indexOf(wordToFind)>-1;
+    //return ""+sentence.indexOf(wordToFind)>-1;
+    return false;
 }
 
 function getOrderInformation(sql){
@@ -118,10 +160,9 @@ function ProductsById(id){
     return 'Select * from products where id='+id;
 }
 
-
-
-
-
+function AllProducts(user_id){
+    return 'Select * from products where user_id='+user_id;
+}
 //Strings functions :D
 function getSubstringFromString(message,separetor){
     for (var i = 0; i < message.length; i++)
