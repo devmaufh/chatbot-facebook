@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 
 app.listen(3000,function() {
     console.log("Servidor  en 3000");
-    //getOrderInformation(ProductsById(1));
+    getOrderInformation(getTopProducts());
 });
 
 app.get('/',function(req,res){
@@ -40,7 +40,7 @@ app.post('/webhook',function(req,res){
         data.entry.forEach(function(pageEntry){
             pageEntry.messaging.forEach(function(messagingEvent){
                 if(messagingEvent.message){
-                reciveMessage(messagingEvent);
+              //  reciveMessage(messagingEvent);
                 }
             });
         });
@@ -56,19 +56,30 @@ function reciveMessage(event){
     console.log('Message: '+messageText);
     evaluateMessage(senderID,messageText);
 }
+//                  No tocar para arriba >:v
+
+
 function evaluateMessage(recipientId,message) {
     var finalMessage='';
     if(isContain(message,'ayuda')){
+        console.log('Evaluate:    Ayuda---');
          finalMessage='¿En qué puedo ayudarte?\nPor ejemplo puedes:\n1. Consultarme detalles de tus compras: Detalle #numero_de_pedido\n2. Ver el estatus de alguno de tus productos: Producto #numero_producto #token\n 3. Productos nuevos: Novedades';
-    //if(isContain(message,'Producto')
     sendMessageText(recipientId,finalMessage);}
-    else{
-        sendMessageText2(recipientId,finalMessage);
+    else 
+    if(isContain(message, 'novedades')||isContain(message,'nuevos')){
+        finalMessage='Novedades :D';
+        //sendMessageText(recipientId,finalMessage);
+        sendMessageText2(recipientId);
     }
+    //sendMessageText(recipientId,finalMessage);
+
+
+
 }
 
 
 function sendMessageText(recipientId,message){
+    console.log('sendmessageText');
     var messageData={
         recipient:{
             id:recipientId
@@ -82,6 +93,7 @@ function sendMessageText(recipientId,message){
     callSendApi(messageData);
 }
 function callSendApi(messageData){
+    console.log('call_send_api');
     request({
         uri:'https://graph.facebook.com/v2.6/me/messages',
         qs:{access_token:APP_TOKEN},
@@ -89,17 +101,14 @@ function callSendApi(messageData){
         json:messageData
     },function(error,response,data){
         if(error){
-           // console.log('Error enviando msg'+JSON.stringify(response));
+           console.log('Error enviando msg');
         }else{
-            //console.log('Mensaje exitoso'+ JSON.stringify(response));
+            console.log('Mensaje exitoso');
         }
     });
 }
-
-
-
 //Templates
-function sendMessageText2(recipientId,message){
+function sendMessageText2(recipientId){
     var messageData={
         recipient:{
             id:recipientId
@@ -109,7 +118,13 @@ function sendMessageText2(recipientId,message){
                 type: "template",
                 payload: {
                     template_type: "generic",
-                    elements: [elementTemplate()]
+                    elements: [
+                        elementTemplate(1,"Hello world",10,"nothing"),
+                        elementTemplate(1,"Hello world",10,"nothing"),
+                        elementTemplate(1,"Hello world",10,"nothing"),
+                        elementTemplate(1,"Hello world",10,"nothing"),
+                        elementTemplate(1,"Hello world",10,"nothing")
+                    ]
                 }
             }
         }
@@ -117,28 +132,29 @@ function sendMessageText2(recipientId,message){
     
     callSendApi(messageData);
 }
-function elementTemplate(){
+function elementTemplate(id,product_title,pricing, description){
     return{
-        title: "TEst template",
-        subtitle: "hekklo world js",
-        item_url: "https://www.pixabay.com",
-        image_url: "https://cdn.pixabay.com/photo/2018/10/01/12/18/leaf-3716035_960_720.jpg",
-        buttons: [buttonsTemplate()],
+        title: product_title,
+        subtitle: description,
+        item_url: "localhost/intergrami/public/products/"+id,
+        image_url: "localhost/intergrami/public/products/"+id,
+        buttons: [buttonsTemplate(pricing)],
     }
 }
-function buttonsTemplate(){
+function buttonsTemplate(label_button){
     return{
         type: "web_url",
         url:"https://www.google.com",
-        title: "Ver"
+        title: label_button
     }
 }
 
 //
 
 function isContain(sentence,wordToFind){
-    //return ""+sentence.indexOf(wordToFind)>-1;
-    return false;
+    if(sentence!=null) 
+    return ""+sentence.indexOf(wordToFind)>-1 ;
+    else return false;
 }
 
 function getOrderInformation(sql){
@@ -148,20 +164,15 @@ function getOrderInformation(sql){
             if(err) throw err;
             Object.keys(result).forEach(function(key){
                 var row=result[key];
-
-                //setValue(response_query,row.description);
-                //resu=row.description;
-                //console.log("Resultado                  "+resu);
+                resu=row.description;   
+                console.log("Resultado                  "+row.id);
             });
         })  
     });
 }
-function ProductsById(id){
-    return 'Select * from products where id='+id;
-}
 
-function AllProducts(user_id){
-    return 'Select * from products where user_id='+user_id;
+function getTopProducts(){
+    return 'Select id,title, pricing, description from products order by id DESC limit 5';
 }
 //Strings functions :D
 function getSubstringFromString(message,separetor){
