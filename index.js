@@ -1,25 +1,23 @@
 const mysql=require('mysql');
+var express= require('express');
+var bodyParser= require('body-parser');
+var request= require('request');
+const APP_TOKEN='EAACZCFcmLbAkBAGrppRZCU1G3yyIPbzbjtawurJ4HlXLV5fmRoWPxrRiqBbI2ZBmNkiR9ua2ojKjZAClOsRZBLlqP3VZAVqgZAN3oyU7dRZB7mizZBjZBYc65ZBLsSRJJO1dmqZCtShYa63MVnj1Phz0hGsaVeZBNDXpC6B6DXLaCvZApJwPqvSrJyKw1u';
+
 const connection=mysql.createConnection({
     host:'localhost',
     user: 'root',
     password: '',
     database:'intergrami_web'
 });
-var express= require('express');
-var bodyParser=require('body-parser');
-var request=require('request');
-//change
-const APP_TOKEN='EAACZCFcmLbAkBAGrppRZCU1G3yyIPbzbjtawurJ4HlXLV5fmRoWPxrRiqBbI2ZBmNkiR9ua2ojKjZAClOsRZBLlqP3VZAVqgZAN3oyU7dRZB7mizZBjZBYc65ZBLsSRJJO1dmqZCtShYa63MVnj1Phz0hGsaVeZBNDXpC6B6DXLaCvZApJwPqvSrJyKw1u';
-
+connection.connect();
 var app=express();
-
 app.use(bodyParser.json());
-
-app.listen(3000,function() {
-    console.log("Servidor  en 3000");
-    getOrderInformation(getTopProducts());
+app.listen(3000, function(){
+    console.log('listening on 3000');
+    //productsTopQuery();
+    
 });
-
 app.get('/',function(req,res){
     res.send('Welcomte to intergrami bot')
 });
@@ -32,7 +30,6 @@ app.get('/webhook',function(req,res){
     }
 });
 
-//valida eventos
 app.post('/webhook',function(req,res){
     var data=req.body;
     console.log('webhook')
@@ -40,12 +37,12 @@ app.post('/webhook',function(req,res){
         data.entry.forEach(function(pageEntry){
             pageEntry.messaging.forEach(function(messagingEvent){
                 if(messagingEvent.message){
-              //  reciveMessage(messagingEvent);
+                    reciveMessage(messagingEvent);
                 }
             });
         });
         res.sendStatus(200);
-    }//end if
+    }//end ifx
 });
 
 //recive mensaje
@@ -56,28 +53,57 @@ function reciveMessage(event){
     console.log('Message: '+messageText);
     evaluateMessage(senderID,messageText);
 }
-//                  No tocar para arriba >:v
-
-
 function evaluateMessage(recipientId,message) {
     var finalMessage='';
     if(isContain(message,'ayuda')){
         console.log('Evaluate:    Ayuda---');
          finalMessage='¿En qué puedo ayudarte?\nPor ejemplo puedes:\n1. Consultarme detalles de tus compras: Detalle #numero_de_pedido\n2. Ver el estatus de alguno de tus productos: Producto #numero_producto #token\n 3. Productos nuevos: Novedades';
-    sendMessageText(recipientId,finalMessage);}
+    sendMessageText(recipientId,finalMessage);
+    }
     else 
     if(isContain(message, 'novedades')||isContain(message,'nuevos')){
         finalMessage='Novedades :D';
         //sendMessageText(recipientId,finalMessage);
-        sendMessageText2(recipientId);
+        productsTopQuery(recipientId);
+        //sendMessageText2(recipientId);
     }
-    //sendMessageText(recipientId,finalMessage);
-
-
-
+    //sendMessageText(recipientId,finalMessage)
+}
+function isContain(sentence,wordToFind){
+    if(sentence!=null) 
+    return ""+sentence.indexOf(wordToFind)>-1 ;
+    else return false;
 }
 
 
+
+
+
+
+
+function productsTopQuery(recipientId){
+    connection.query('Select * from products order by id DESC limit 5', function(err,result){
+        readQueryResult(result,recipientId);
+    });
+}
+function readQueryResult(result,recipientId){
+    var templates=[];
+    Object.keys(result).forEach(function(key) {
+        var row= result[key];
+        //console.log(row.id+" log");
+        templates.push({
+            title: row.title,
+            image_url: "localhost/intergrami/public/products/images/"+row.id+"."+row.extension,
+            subtitle: row.description,
+            item_url: "localhost/intergrami/public/products/"+row.id,
+            
+            buttons: [buttonsTemplate(row.pricing,row.id)],
+        });
+    });
+    //console.log("READ QUERYYYY"+JSON.stringify(templates));
+
+    sendMessageTemplate(recipientId,templates)
+}
 function sendMessageText(recipientId,message){
     console.log('sendmessageText');
     var messageData={
@@ -90,6 +116,27 @@ function sendMessageText(recipientId,message){
             //text:message
         };
     
+    callSendApi(messageData);
+}
+function sendMessageTemplate(recipientId,templates){
+    //console.log("SEND MESSAGEEEEE"+JSON.stringify(templates));
+
+    var messageData={
+        recipient:{
+            id:recipientId
+        },
+        message:{
+            attachment:{
+                type: "template",
+                payload:{
+                    template_type: "generic",
+                    elements:templates
+                }
+            }
+        }
+    };
+
+    console.log("MENSAJE FINAAAL"+JSON.stringify(messageData));
     callSendApi(messageData);
 }
 function callSendApi(messageData){
@@ -107,76 +154,10 @@ function callSendApi(messageData){
         }
     });
 }
-//Templates
-function sendMessageText2(recipientId){
-    var messageData={
-        recipient:{
-            id:recipientId
-        },
-        message:{
-            attachment:{
-                type: "template",
-                payload: {
-                    template_type: "generic",
-                    elements: [
-                        elementTemplate(1,"Hello world",10,"nothing"),
-                        elementTemplate(1,"Hello world",10,"nothing"),
-                        elementTemplate(1,"Hello world",10,"nothing"),
-                        elementTemplate(1,"Hello world",10,"nothing"),
-                        elementTemplate(1,"Hello world",10,"nothing")
-                    ]
-                }
-            }
-        }
-        };
-    
-    callSendApi(messageData);
-}
-function elementTemplate(id,product_title,pricing, description){
-    return{
-        title: product_title,
-        subtitle: description,
-        item_url: "localhost/intergrami/public/products/"+id,
-        image_url: "localhost/intergrami/public/products/"+id,
-        buttons: [buttonsTemplate(pricing)],
-    }
-}
-function buttonsTemplate(label_button){
+function buttonsTemplate(label_button,id){
     return{
         type: "web_url",
-        url:"https://www.google.com",
-        title: label_button
+        url:"localhost/intergrami/public/products/"+id,
+        title: "$"+label_button
     }
-}
-
-//
-
-function isContain(sentence,wordToFind){
-    if(sentence!=null) 
-    return ""+sentence.indexOf(wordToFind)>-1 ;
-    else return false;
-}
-
-function getOrderInformation(sql){
-    connection.connect(function(err){
-        if(err) throw err;
-        connection.query(sql,function(err,result,fields){
-            if(err) throw err;
-            Object.keys(result).forEach(function(key){
-                var row=result[key];
-                resu=row.description;   
-                console.log("Resultado                  "+row.id);
-            });
-        })  
-    });
-}
-
-function getTopProducts(){
-    return 'Select id,title, pricing, description from products order by id DESC limit 5';
-}
-//Strings functions :D
-function getSubstringFromString(message,separetor){
-    for (var i = 0; i < message.length; i++)
-        if(message.charAt(i)==separetor)
-           return message.substring(i+1);
 }
